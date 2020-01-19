@@ -4,7 +4,7 @@ name: $(BuildDefinitionName).$(DayOfYear)$(Rev:.r)
 
 variables:
   - name: environment_name
-    value: "umb-cloud-test"
+    value: "umbraco-web-app"
   - name: terraform_version
     value: "0.12.15"
   - name: vmImageName
