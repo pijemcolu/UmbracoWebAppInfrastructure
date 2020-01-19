@@ -51,8 +51,8 @@ resource "azurerm_frontdoor" "fd" {
   backend_pool {
     name = "Backend"
     backend {
-      host_header = "dummy.com"
-      address     = "dummy.com"
+      host_header = module.umbraco-web-app.hostname
+      address     = module.umbraco-web-app.hostname
       http_port   = 80
       https_port  = 443
     }
@@ -167,3 +167,22 @@ resource "azurerm_key_vault_access_policy" "fd" {
 
 ## TODO Here come the modules
 
+module "umbraco-web-app" {
+  source           = "../../../tf-modules/umbraco-web-app"
+  location_acronym = "we"
+  location         = "West Europe"
+
+  app_name = "azarchdemo"
+  rg_name  = azurerm_resource_group.rg.name
+}
+
+module "sql-db" {
+  source           = "../../../tf-modules/sql-db"
+  location_acronym = "we"
+  location         = "West Europe"
+
+  rg_name      = azurerm_resource_group.rg.name
+  sql_edition  = "Basic"
+  db_name      = "umbdemodb-485"
+  sql_username = "supersecretuser"
+}
