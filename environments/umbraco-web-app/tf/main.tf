@@ -167,3 +167,11 @@ resource "azurerm_key_vault_access_policy" "fd" {
 
 ## TODO Here come the modules
 
+module "storage-account" {
+  source           = "../../../tf-modules/storage-account"
+  location_acronym = "we"
+  primary_location = "West Europe"
+
+  rg_name = azurerm_resource_group.rg.name
+  name    = "webapp564"
+}
