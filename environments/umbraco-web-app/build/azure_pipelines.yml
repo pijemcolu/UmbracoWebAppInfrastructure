@@ -1,0 +1,87 @@
+# Downloaded from https://github.com/JamesDLD/terraform
+
+name: $(BuildDefinitionName).$(DayOfYear)$(Rev:.r)
+
+variables:
+  - name: environment_name
+    value: "umb-cloud-test"
+  - name: terraform_version
+    value: "0.12.15"
+  - name: vmImageName
+    value: "ubuntu-latest"
+  - name: terraform_secrets_file
+    value: "$(environment_name).secrets.json"
+  - name: artifact_name
+    value: "$(environment_name)_artifacts"
+  - name: tf_work_dir
+    value: "environments/$(environment_name)/tf"
+  - name: certificate_secret_file
+    value: "mikulas.dev.pfx"
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - master
+  paths:
+    include:
+      - $(tf_work_dir)/*
+      - tf-modules/*
+      - environments/$(environment_name)/build/azure_pipelines.yml
+
+stages:
+  - stage: Build
+    jobs:
+      - job: Terraform_Plan
+        displayName: Terraform Identify Changes & Create Plan
+        continueOnError: false
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: DownloadSecureFile@1
+            displayName: "Download secure file $(terraform_secrets_file)"
+            inputs:
+              secureFile: $(terraform_secrets_file)
+          - task: DownloadSecureFile@1
+            displayName: "Download certificate file $(certificate_secret_file)"
+            name: certificateFile
+            inputs:
+              secureFile: $(certificate_secret_file)
+          - script: |
+              echo "Moving certificate into the terraform working directory"
+              mv $(certificateFile.secureFilePath) $(tf_work_dir)/$(certificate_secret_file)     
+
+          - template: terraform.yml
+            parameters:
+              version: $(terraform_version)
+              path: "$(tf_work_dir)"
+              package_name: "$(environment_name)"
+              terraform_init: true
+              terraform_plan: true
+              main_secret_file_id: $(terraform_secrets_file)
+              backend_secret_file_id: $(terraform_secrets_file)
+              backend_file_path: "providers.tf"
+
+          - publish: "./ArtifactPublishLocation" # Local path to include in the Artifact
+            artifact: "$(artifact_name)"
+
+  - stage: Deploy
+    dependsOn: Build
+    jobs:
+      # track deployments on the environment
+      - deployment: Terraform_Apply
+        displayName: Terraform Apply Plan
+        pool:
+          vmImage: $(vmImageName)
+        environment: $(environment_name)
+        strategy:
+          # default deployment strategy
+          runOnce:
+            deploy:
+              steps:
+                - template: terraform.yml
+                  parameters:
+                    version: $(terraform_version)
+                    artifact_path: $(Pipeline.Workspace)/$(artifact_name)
+                    package_name: "$(environment_name)"
+                    terraform_apply: true

@@ -1,0 +1,11 @@
+.terraform
+.vscode
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+secrets.json
+tls
+
+mikulas.dev.pfx
