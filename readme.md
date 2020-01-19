@@ -3,7 +3,7 @@
 Date: 20th January 2020</br>
 Title: Towards consistent and repeatable infrastructure at Umbraco</br>
 Abstract: In this talk Mikulas and Morten will share how Umbraco uses Infrastructure as Code with Terraform, as well as their approach to consistent and automated infrastructure across Development and Production environments</br> 
-Demo: Scalable, multi-region, monitored Azure web app Umbraco installation over multiple iterations with CI/CD</br>
+Demo: Hello world & Azure web app Umbraco installation with CI/CD</br>
 
 ## Iteration 1 - Basic web app 
 
