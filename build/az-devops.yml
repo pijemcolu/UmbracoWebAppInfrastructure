@@ -13,6 +13,11 @@
 # ├── tfvars/
 # │   ├── $(environment).tfvars
 
+parameters:
+- name: environment
+  type: string
+  default: 'dev'
+
 variables:
 - name: serviceConnectionName
   value: 'tf-sp-dev-mto-test'
