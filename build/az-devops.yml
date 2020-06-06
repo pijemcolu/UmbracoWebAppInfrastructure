@@ -22,7 +22,7 @@ variables:
 - name: serviceConnectionName
   value: 'tf-sp-dev-mto-test'
 - name:  tfvarsFile
-  value: $(environment).tfvars
+  value: ${{ parameters.environment }}.tfvars
 - name: tfBackendResourceGroupName
   value: rg-tf-backend-storage
 - name: tfBackendStorageAccountName
@@ -30,7 +30,7 @@ variables:
 - name:  tfBackendStorageContainerName
   value: tf-backend-files
 - name:  tfBackendFileName  
-  value: $(environment)-tf-state-file
+  value: ${{ parameters.environment }}-tf-state-file
 
 trigger:
 - master
@@ -40,13 +40,13 @@ pool:
 
 steps:
 #PARAMETER VALIDATION
-# - script: |
-#     set +e
-#     if [ -z $(environment) ]; then
-#     echo "target environment not specified";
-#     exit 1;
-#     fi
-#     echo "environment is:" $(environment)
+- script: |
+    set +e
+    if [ -z ${{ parameters.environment }} ]; then
+    echo "target environment not specified";
+    exit 1;
+    fi
+    echo "environment is:" ${{ parameters.environment }}
 
 #TERRAFORM INIT, PLAN & APPLY
 - task: AzureCLI@2
@@ -64,5 +64,5 @@ steps:
       echo '#######Terraform Apply########'
       terraform apply out.plan    
     addSpnToEnvironment: true
-    workingDirectory: '$(System.DefaultWorkingDirectory)/tf-envs/$(environment)'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/tf-envs/${{ parameters.environment }}'
   displayName: 'az login; terraform init; terraform plan; terraform apply'
