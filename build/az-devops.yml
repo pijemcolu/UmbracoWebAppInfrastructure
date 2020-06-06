@@ -1,22 +1,28 @@
 # Deploys an opinionated terraform project to an azure subscription
 
 # Requirements (create using ./az-setup.sh)
-# $(environment) pipeline parameter
+# ${{ parameters.environment }} pipeline parameter
 # service connection created in Azure Devops
-# azure storage account
+# azure storage account for backend
 
 # Assumes a folder structure:
 # tf-envs/
-# ├── $(environment)/
+# ├── ${{ parameters.environment }}/
 # │   ├── main.tf
 # │   ├── variables.tf
 # ├── tfvars/
-# │   ├── $(environment).tfvars
+# │   ├── ${{ parameters.environment }}.tfvars
 
 parameters:
 - name: environment
   type: string
   default: 'dev'
+- name: umbracoSemanticVersion
+  type: string
+  default: '8.6.0'
+- name: umbracoInstanceName
+  type: string
+  default: 'dev-test-random-mto'
 
 variables:
 - name: serviceConnectionName
@@ -47,6 +53,7 @@ steps:
     exit 1;
     fi
     echo "environment is:" ${{ parameters.environment }}
+  displayName: 'Validate parameters'
 
 #TERRAFORM INIT, PLAN & APPLY
 - task: AzureCLI@2
@@ -65,10 +72,13 @@ steps:
       terraform init -backend-config="resource_group_name=$(tfBackendResourceGroupName)" -backend-config="storage_account_name=$(tfBackendStorageAccountName)" -backend-config="container_name=$(tfBackendStorageContainerName)" -backend-config="key=$(tfBackendFileName)"  
     
       echo '#######Terraform Plan########'
-      terraform plan -var-file=../tf-vars/$(tfvarsFile) -out="out.plan"    
+      terraform plan -var-file=../tf-vars/$(tfvarsFile) \
+        -out="out.plan" \
+        -var='package_source_url=http://umbracoreleases.blob.core.windows.net/download/UmbracoCms.${{ parameters.umbracoSemanticVersion }}.zip' \
+        -var='instance_id=${{ parameters.umbracoInstanceName }}'    
     
       echo '#######Terraform Apply########'
-      terraform apply out.plan    
+      terraform apply out.plan 
     addSpnToEnvironment: true
     workingDirectory: '$(System.DefaultWorkingDirectory)/tf-envs/${{ parameters.environment }}'
-  displayName: 'az login; terraform init; terraform plan; terraform apply'
+  displayName: 'Terraform apply'
