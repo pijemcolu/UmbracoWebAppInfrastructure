@@ -40,13 +40,13 @@ pool:
 
 steps:
 #PARAMETER VALIDATION
-- script: |
-    set +e
-    if [ -z $(environment) ]; then
-    echo "target environment not specified";
-    exit 1;
-    fi
-    echo "environment is:" $(environment)
+# - script: |
+#     set +e
+#     if [ -z $(environment) ]; then
+#     echo "target environment not specified";
+#     exit 1;
+#     fi
+#     echo "environment is:" $(environment)
 
 #AZURE LOGIN
 #TERRAFORM INIT, PLAN & APPLY
