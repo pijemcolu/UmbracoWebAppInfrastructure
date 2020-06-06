@@ -19,3 +19,7 @@ variable "location_acronym" {
 variable "location" {
   description = "Location of deployment of the resources."
 }
+
+variable "package_source_url" {
+  description = "Source of the package to deploy to the Azure Web App"
+}

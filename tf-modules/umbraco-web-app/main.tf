@@ -1,7 +1,7 @@
 ## Web
 # App Service Plan
 resource "azurerm_app_service_plan" "appplan" {
-  name                = "azappsp-${var.app_name}-${var.location_acronym}"
+  name                = "asp-${var.app_name}-${var.location_acronym}"
   location            = var.location
   resource_group_name = var.rg_name
 
@@ -10,9 +10,10 @@ resource "azurerm_app_service_plan" "appplan" {
     size = "S1"
   }
 }
+
 # App Service
 resource "azurerm_app_service" "appservice" {
-  name                = "azapps-${var.app_name}-${var.location_acronym}"
+  name                = "as-${var.app_name}-${var.location_acronym}"
   location            = var.location
   resource_group_name = var.rg_name
   app_service_plan_id = azurerm_app_service_plan.appplan.id
@@ -22,13 +23,11 @@ resource "azurerm_app_service" "appservice" {
   }
 
   app_settings = {
-    "UmbracoDbDSN"                         = var.db_connection_string
+    "UmbracoDbDSN" = var.db_connection_string
   }
-}
 
-resource "null_resource" "deploy" {
   provisioner "local-exec" {
-    command     = ".'${path.module}\\scripts\\deploy.ps1' -ResourceGroupName \"${var.rg_name}\" -AppName \"${azurerm_app_service.appservice.name}\""
+    command     = ".'${path.module}\\scripts\\az-deploy.ps1' -ResourceGroupName \"${var.rg_name}\" -AppName \"${azurerm_app_service.appservice.name}\" -PackageSourceUrl \"${var.package_source_url}\""
     interpreter = ["pwsh", "-Command"]
   }
 }
