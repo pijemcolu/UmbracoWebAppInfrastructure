@@ -55,6 +55,12 @@ steps:
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
     inlineScript: |
+      echo '#######Setting Azure Service Principal Environment Variables########'
+      export ARM_CLIENT_ID=$env:servicePrincipalId
+      export ARM_CLIENT_SECRET=$env:servicePrincipalKey
+      export ARM_SUBSCRIPTION_ID=$(az account show | jq '.id')
+      export ARM_TENANT_ID=$env:tenantId
+
       echo '#######Terraform Init########'
       terraform init -backend-config="resource_group_name=$(tfBackendResourceGroupName)" -backend-config="storage_account_name=$(tfBackendStorageAccountName)" -backend-config="container_name=$(tfBackendStorageContainerName)" -backend-config="key=$(tfBackendFileName)"  
     
