@@ -48,7 +48,6 @@ steps:
 #     fi
 #     echo "environment is:" $(environment)
 
-#AZURE LOGIN
 #TERRAFORM INIT, PLAN & APPLY
 - task: AzureCLI@2
   inputs:
@@ -56,8 +55,6 @@ steps:
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
     inlineScript: |
-      az login --service-principal -u $($env:servicePrincipalId) -p $($env:servicePrincipalKey) --tenant $($env:tenantId)
-
       echo '#######Terraform Init########'
       terraform init -backend-config="resource_group_name=$(tfBackendResourceGroupName)" -backend-config="storage_account_name=$(tfBackendStorageAccountName)" -backend-config="container_name=$(tfBackendStorageContainerName)" -backend-config="key=$(tfBackendFileName)"  
     
