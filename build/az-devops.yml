@@ -15,13 +15,13 @@
 
 variables:
 - name: serviceConnectionName
-  value: ''
+  value: 'tf-sp-dev-mto-test'
 - name:  tfvarsFile
   value: $(environment).tfvars
 - name: tfBackendResourceGroupName
   value: rg-tf-backend-storage
 - name: tfBackendStorageAccountName
-  value: sttfbackend
+  value: sttfbackend34587
 - name:  tfBackendStorageContainerName
   value: tf-backend-files
 - name:  tfBackendFileName  
