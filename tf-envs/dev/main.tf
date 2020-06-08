@@ -21,5 +21,5 @@ module "sql-db" {
   rg_name      = azurerm_resource_group.rg.name
   sql_edition  = "Basic"
   db_name      = var.instance_id
-  sql_username = "${var.instance_id}user"
+  sql_username = "sqluser"
 }
