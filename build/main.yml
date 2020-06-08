@@ -44,5 +44,6 @@ stages:
     jobs:
       - template: delete.yml
         parameters:
+          environment: ${{ parameters.environment }}
           instanceIdentifier: ${{ parameters.instanceIdentifier }}
 

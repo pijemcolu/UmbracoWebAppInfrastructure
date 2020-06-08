@@ -1,6 +1,6 @@
 parameters:
-- name: instanceIdentifier
-  type: string
+  environment:
+  instanceIdentifier:
 
 jobs:
   - deployment: Deleting_Azure_App_Service
@@ -8,6 +8,7 @@ jobs:
     continueOnError: false
     pool:
       vmImage: "ubuntu-latest"
+    environment: ${{ parameters.environment }}
     variables:
       serviceConnectionName: 'tf-sp-dev-mto-test'
     strategy:

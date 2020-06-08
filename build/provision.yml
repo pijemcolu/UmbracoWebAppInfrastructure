@@ -9,6 +9,7 @@ jobs:
     continueOnError: false
     pool:
       vmImage: "ubuntu-latest"
+    environment: ${{ parameters.environment }}
     variables:
       serviceConnectionName: 'tf-sp-dev-mto-test' 
       tfvarsFile: "${{ parameters.environment }}.tfvars"
