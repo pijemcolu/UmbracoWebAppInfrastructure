@@ -31,12 +31,11 @@ parameters:
   type: string
   default: 'dev-test-random-mto'
 
-steps:
-- checkout: self
-
 stages:
   - stage: provision
     jobs:
+      steps:
+      - checkout: self
       - template: provision.yml
         parameters:
           environment: ${{ parameters.environment }}
