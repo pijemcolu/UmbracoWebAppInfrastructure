@@ -1,5 +1,5 @@
 resource "azurerm_resource_group" "rg" {
-  name     = "rg-test-${var.instance_id}"
+  name     = "rg-${var.instance_id}"
   location = var.location
 }
 
