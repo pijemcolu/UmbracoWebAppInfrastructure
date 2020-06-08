@@ -1,10 +1,7 @@
 parameters:
-- name: environment
-  type: string
-- name: umbracoSemanticVersion
-  type: string
-- name: instanceIdentifier
-  type: string
+  environment:
+  umbracoSemanticVersion:
+  instanceIdentifier:
 
 variables:
   serviceConnectionName: 'tf-sp-dev-mto-test' 
