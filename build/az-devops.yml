@@ -12,6 +12,7 @@
 # │   ├── variables.tf
 # ├── tfvars/
 # │   ├── ${{ parameters.environment }}.tfvars
+# │   ├── ${{ parameters.environment }}.backend.json
 
 parameters:
 - name: environment
@@ -20,7 +21,7 @@ parameters:
 - name: umbracoSemanticVersion
   type: string
   default: '8.6.0'
-- name: umbracoInstanceName
+- name: instanceIdentifier
   type: string
   default: 'dev-test-random-mto'
 
@@ -75,10 +76,23 @@ steps:
       terraform plan -var-file=../tf-vars/$(tfvarsFile) \
         -out="out.plan" \
         -var='package_source_url=http://umbracoreleases.blob.core.windows.net/download/UmbracoCms.${{ parameters.umbracoSemanticVersion }}.zip' \
-        -var='instance_id=${{ parameters.umbracoInstanceName }}'    
+        -var='instance_id=${{ parameters.instanceIdentifier }}'    
     
       echo '#######Terraform Apply########'
       terraform apply out.plan 
     addSpnToEnvironment: true
     workingDirectory: '$(System.DefaultWorkingDirectory)/tf-envs/${{ parameters.environment }}'
   displayName: 'Terraform apply'
+
+
+#DELETE RESOURCE GROUP
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: '$(serviceConnectionName)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      echo '#######Destroying resource group########'
+
+      az group delete -n rg-test-${{ parameters.instanceIdentifier }} --yes
+  displayName: 'Delete Azure resources'

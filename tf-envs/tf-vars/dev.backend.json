@@ -1,0 +1,6 @@
+{
+  "resource_group_name": "rg-tf-backend-storage",
+  "storage_account_name": "sttfbackend34587",
+  "container_name": "tf-backend-files",
+  "key": "dev-tf-state-file"
+}

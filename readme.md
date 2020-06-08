@@ -1,12 +1,16 @@
 # Umbraco in Public Cloud
 
-Provisioning of a basic Umbraco CMS instance in Azure App Service using terraform.
+Example terraform project with a CI/CD pipeline running in Azure DevOps. 
+Provisions the infrastructure for an Umbraco CMS instance.
+Deploys the specified version of Umbraco CMS to the Azure App Service.
+
+TODO diagram
 
 ## Project structure
 
 ```sh
 ├── build                   # yaml pipeline for azure devops
-│   ├── setup               # setup scripts
+│   ├── setup               # setup scripts for terraform remote state in azure & azure service principal & azure devops
 ├── tf-envs                 # terraformed environments
 │   ├── dev                 # an example azure environment
 │   └── tf-vars             # .tfvars variable files for environments
@@ -15,15 +19,42 @@ Provisioning of a basic Umbraco CMS instance in Azure App Service using terrafor
     └── umbraco-web-app     # azure app service plan & app service
 ```
 
-## Just show me the code
+## How to use the project
 
-### Provision 
+After each section of you'll have provisioned a running instance of the Umbraco CMS in Azure App Service. If you don't have handy a unix environment you can run all the scripts in the [Azure shell](https://shell.azure.com), using the vscode editor: `$ code`.
 
-This example will create resources in your azure subscription.
-At the end of the example you'll have an instance of Umbraco CMS 8.6.0 ready to be installed at
-mto-temp-test1234.azurewebsites.net
+### Local development
 
-Before running the scripts, modify required variables in the script: `build/setup/az-set-variables.sh`
+1. Clone the repository
+2. Login to Azure
+3. Provision the infrastructure & deploy Umbraco
+
+#### Provision 
+
+```sh
+git clone url umbraco-azure
+cd umbraco-azure/tf-envs/dev
+
+az login
+terraform apply -var-file="../tf-vars/dev.tfvars"
+```
+
+#### Cleanup
+
+```sh
+cd umbraco-azure/tf-envs/dev
+
+az login
+terraform destroy -var-file="../tf-vars/dev.tfvars"
+```
+
+### Remote state for terraform
+
+Same as [Local development](#local-development) but the terraform state is persisted remotely in azure table storage.
+This allows multiple developers to collaborate on one infrastructure deployment.
+
+The remote state is stored in azure table storage that we need to create before executing terraform.so we need to prepare
+Before running the scripts, modify required variables in the script: `build/setup/set-variables.sh`
 
 
 ```sh
@@ -32,19 +63,19 @@ git clone url umbraco-azure
 cd umbraco-azure
 
 # Make the setup scripts executable
-chmod u+x ./build/setup/az-set-variables.sh
-chmod u+x ./build/setup/az-setup.sh
+chmod u+x ./build/setup/tf-set-variables.sh
+chmod u+x ./build/setup/tf-setup.sh
 
 ## Login to azure
 az login
 
 # Set session variables
-./build/setup/az-set-variables.sh
+./build/setup/tf-set-variables.sh
 
 # Create azure storage account for keeping terraform project state backend files
 # Create service principal for terraform & azure devops pipeline
 # Create azure devops service connection
-./build/az-setup.sh
+./build/setup/tf-setup.sh
 
 # Create a running umbraco instance in your azure subcsription
 cd tf-envs/dev
