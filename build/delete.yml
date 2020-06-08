@@ -2,18 +2,26 @@ parameters:
 - name: instanceIdentifier
   type: string
 
-variables:
-  serviceConnectionName: 'tf-sp-dev-mto-test' 
+jobs:
+  - deployment: Deleting_Azure_App_Service
+    displayName: Deleting Azure resource group
+    continueOnError: false
+    pool:
+      vmImage: "ubuntu-latest"
+    variables:
+      serviceConnectionName: 'tf-sp-dev-mto-test'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            #DELETE RESOURCE GROUP
+            - task: AzureCLI@2
+              inputs:
+                azureSubscription: '$(serviceConnectionName)'
+                scriptType: 'bash'
+                scriptLocation: 'inlineScript'
+                inlineScript: |
+                  echo '#######Destroying resource group########'
 
-steps:
-#DELETE RESOURCE GROUP
-- task: AzureCLI@2
-  inputs:
-    azureSubscription: '$(serviceConnectionName)'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      echo '#######Destroying resource group########'
-
-      az group delete -n rg-test-${{ parameters.instanceIdentifier }} --yes
-  displayName: 'Delete Azure resources'
+                  az group delete -n rg-test-${{ parameters.instanceIdentifier }} --yes
+              displayName: 'Delete Azure resources'
