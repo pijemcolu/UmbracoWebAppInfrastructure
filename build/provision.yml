@@ -34,10 +34,10 @@ jobs:
                   export ARM_TENANT_ID=$tenantId
 
                   echo '#######Terraform Init########'
-                  terraform init -backend-config="resource_group_name=$(tfBackendResourceGroupName)" -backend-config="storage_account_name=$(tfBackendStorageAccountName)" -backend-config="container_name=$(tfBackendStorageContainerName)" -backend-config="key=$(tfBackendFileName)"  
+                  terraform init -backend-config="resource_group_name=${{ variables.tfBackendResourceGroupName }}" -backend-config="storage_account_name=${{ variables.tfBackendStorageAccountName }}" -backend-config="container_name=${{ variables.tfBackendStorageContainerName }}" -backend-config="key=${{ variables.tfBackendFileName }}"  
 
                   echo '#######Terraform Plan########'
-                  terraform plan -var-file=../tf-vars/$(tfvarsFile) \
+                  terraform plan -var-file=../tf-vars/${{ variables.tfvarsFile }} \
                     -out="out.plan" \
                     -var='package_source_url=http://umbracoreleases.blob.core.windows.net/download/UmbracoCms.${{ parameters.umbracoSemanticVersion }}.zip' \
                     -var='instance_id=${{ parameters.instanceIdentifier }}'    
