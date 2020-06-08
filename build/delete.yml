@@ -17,7 +17,7 @@ jobs:
             #DELETE RESOURCE GROUP
             - task: AzureCLI@2
               inputs:
-                azureSubscription: '$(serviceConnectionName)'
+                azureSubscription: ${{ variables.serviceConnectionName }}
                 scriptType: 'bash'
                 scriptLocation: 'inlineScript'
                 inlineScript: |
