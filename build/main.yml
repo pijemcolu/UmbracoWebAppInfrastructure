@@ -32,7 +32,7 @@ parameters:
   default: '8.6.0'
 - name: instanceIdentifier
   type: string
-  default: 'cypresstestinstance'
+  default: 'umbcypresstestinstance'
 
 stages:
   - stage: provision
