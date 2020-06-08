@@ -1,12 +1,11 @@
 parameters:
 - name: instanceIdentifier
   type: string
-  default: 'dev-test-random-mto'
 
 variables:
-- name: serviceConnectionName
-  value: 'tf-sp-dev-mto-test'
+  serviceConnectionName: 'tf-sp-dev-mto-test' 
 
+steps:
 #DELETE RESOURCE GROUP
 - task: AzureCLI@2
   inputs:
