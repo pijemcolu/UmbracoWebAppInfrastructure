@@ -31,6 +31,9 @@ parameters:
   type: string
   default: 'dev-test-random-mto'
 
+steps:
+- checkout: self
+
 stages:
   - stage: provision
     jobs:
