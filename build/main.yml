@@ -34,7 +34,6 @@ parameters:
 stages:
   - stage: provision
     jobs:
-      steps:
       - checkout: self
       - template: provision.yml
         parameters:
