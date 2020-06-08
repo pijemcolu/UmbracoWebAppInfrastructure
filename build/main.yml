@@ -34,7 +34,6 @@ parameters:
 stages:
   - stage: provision
     jobs:
-      - checkout: self
       - template: provision.yml
         parameters:
           environment: ${{ parameters.environment }}

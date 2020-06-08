@@ -21,6 +21,7 @@ jobs:
       runOnce:
         deploy:
           steps:
+            - checkout: self
             - task: AzureCLI@2
               inputs:
                 azureSubscription: ${{ variables.serviceConnectionName }}
