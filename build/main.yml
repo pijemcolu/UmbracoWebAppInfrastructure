@@ -40,10 +40,6 @@ stages:
           umbracoSemanticVersion: ${{ parameters.umbracoSemanticVersion }}
           instanceIdentifier: ${{ parameters.instanceIdentifier }}
 
-  - stage: custom
-    jobs:
-      - script: "echo hello!"
-
   - stage: delete
     jobs:
       - template: delete.yml
