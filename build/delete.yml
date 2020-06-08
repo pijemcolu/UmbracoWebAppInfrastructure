@@ -1,6 +1,7 @@
 parameters:
   environment:
   instanceIdentifier:
+  serviceConnectionName:
 
 jobs:
   - deployment: Deleting_Azure_App_Service
@@ -9,8 +10,6 @@ jobs:
     pool:
       vmImage: "ubuntu-latest"
     environment: ${{ parameters.environment }}
-    variables:
-      serviceConnectionName: 'tf-sp-dev-mto-test'
     strategy:
       runOnce:
         deploy:
@@ -18,11 +17,11 @@ jobs:
             #DELETE RESOURCE GROUP
             - task: AzureCLI@2
               inputs:
-                azureSubscription: ${{ variables.serviceConnectionName }}
+                azureSubscription: ${{ parameters.serviceConnectionName }}
                 scriptType: 'bash'
                 scriptLocation: 'inlineScript'
                 inlineScript: |
                   echo '#######Destroying resource group########'
 
-                  az group delete -n rg-test-${{ parameters.instanceIdentifier }} --yes
+                  az group delete -n rg-${{ parameters.instanceIdentifier }} --yes
               displayName: 'Delete Azure resources'

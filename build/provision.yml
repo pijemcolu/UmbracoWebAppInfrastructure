@@ -2,6 +2,7 @@ parameters:
   environment:
   umbracoSemanticVersion:
   instanceIdentifier:
+  serviceConnectionName:
 
 jobs:
   - deployment: Provisioning_Azure_App_Service
@@ -11,12 +12,11 @@ jobs:
       vmImage: "ubuntu-latest"
     environment: ${{ parameters.environment }}
     variables:
-      serviceConnectionName: 'tf-sp-dev-mto-test' 
-      tfvarsFile: "${{ parameters.environment }}.tfvars"
       tfBackendResourceGroupName: 'rg-tf-backend-storage'
       tfBackendStorageAccountName: 'sttfbackend34587'
       tfBackendStorageContainerName: 'tf-backend-files'
       tfBackendFileName: "${{ parameters.environment }}-tf-state-file"
+      tfvarsFile: "${{ parameters.environment }}.tfvars"
     strategy:
       runOnce:
         deploy:
@@ -24,12 +24,10 @@ jobs:
             - checkout: self
             - task: AzureCLI@2
               inputs:
-                azureSubscription: ${{ variables.serviceConnectionName }}
+                azureSubscription: ${{ parameters.serviceConnectionName }}
                 scriptType: 'bash'
                 scriptLocation: 'inlineScript'
                 inlineScript: |
-                  pwd
-
                   echo '#######Setting Azure Service Principal Environment Variables########'
                   export ARM_CLIENT_ID=$servicePrincipalId
                   export ARM_CLIENT_SECRET=$servicePrincipalKey
