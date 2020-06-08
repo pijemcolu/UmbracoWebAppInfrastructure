@@ -1,0 +1,20 @@
+parameters:
+- name: instanceIdentifier
+  type: string
+  default: 'dev-test-random-mto'
+
+variables:
+- name: serviceConnectionName
+  value: 'tf-sp-dev-mto-test'
+
+#DELETE RESOURCE GROUP
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: '$(serviceConnectionName)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      echo '#######Destroying resource group########'
+
+      az group delete -n rg-test-${{ parameters.instanceIdentifier }} --yes
+  displayName: 'Delete Azure resources'

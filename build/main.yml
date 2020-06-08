@@ -1,0 +1,52 @@
+# Deploys an opinionated terraform project to an azure subscription
+
+# Requirements (create using ./az-setup.sh)
+# ${{ parameters.environment }} pipeline parameter
+# service connection created in Azure Devops
+# azure storage account for backend
+
+# Assumes a folder structure:
+# tf-envs/
+# ├── ${{ parameters.environment }}/
+# │   ├── main.tf
+# │   ├── variables.tf
+# ├── tfvars/
+# │   ├── ${{ parameters.environment }}.tfvars
+# │   ├── ${{ parameters.environment }}.backend.json
+
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+parameters:
+- name: environment
+  type: string
+  default: 'dev'
+- name: umbracoSemanticVersion
+  type: string
+  default: '8.6.0'
+- name: instanceIdentifier
+  type: string
+  default: 'dev-test-random-mto'
+
+stages:
+  - stage: provision
+    jobs:
+      - template: provision.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+          umbracoSemanticVersion: ${{ parameters.umbracoSemanticVersion }}
+          instanceIdentifier: ${{ parameters.instanceIdentifier }}
+
+  - stage: custom
+    jobs:
+      - script: "echo hello!"
+
+  - stage: delete
+    jobs:
+      - template: delete.yml
+        parameters:
+          instanceIdentifier: ${{ parameters.instanceIdentifier }}
+
