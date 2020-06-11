@@ -27,12 +27,15 @@ parameters:
 - name: serviceConnectionName
   type: string
   default: 'tf-sp-dev-mto-test'
-- name: umbracoSemanticVersion
-  type: string
-  default: '8.6.0'
 - name: instanceIdentifier
   type: string
   default: 'umbcypresstestinstance'
+- name: umbracoSemanticVersion
+  type: string
+  default: '8.6.0'
+- name: umbracoArtifactUrl
+  type: string
+  default: 'http://umbracoreleases.blob.core.windows.net/download/UmbracoCms.8.6.0.zip'
 
 stages:
   - stage: provision
@@ -40,9 +43,10 @@ stages:
       - template: provision.yml
         parameters:
           environment: ${{ parameters.environment }}
-          umbracoSemanticVersion: ${{ parameters.umbracoSemanticVersion }}
           instanceIdentifier: ${{ parameters.instanceIdentifier }}
           serviceConnectionName: ${{ parameters.serviceConnectionName }}
+          umbracoSemanticVersion: ${{ parameters.umbracoSemanticVersion }}
+          umbracoArtifactUrl: ${{ parameters.umbracoArtifactUrl }}
 
   - stage: delete
     jobs:

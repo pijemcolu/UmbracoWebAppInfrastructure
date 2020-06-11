@@ -1,8 +1,10 @@
 parameters:
   environment:
-  umbracoSemanticVersion:
   instanceIdentifier:
   serviceConnectionName:
+  # Optional
+  umbracoSemanticVersion:
+  umbracoArtifactUrl:
 
 jobs:
   - deployment: Provisioning_Azure_App_Service
@@ -38,10 +40,18 @@ jobs:
                   terraform init -backend-config="resource_group_name=${{ variables.tfBackendResourceGroupName }}" -backend-config="storage_account_name=${{ variables.tfBackendStorageAccountName }}" -backend-config="container_name=${{ variables.tfBackendStorageContainerName }}" -backend-config="key=${{ variables.tfBackendFileName }}"  
 
                   echo '#######Terraform Plan########'
+                  params=()
+                  if [[ -n "$umbracoArtifactUrl" ]]; then
+                    params+=(-var='package_source_url={{ parameters.umbracoArtifactUrl }}')
+                  else
+                    params+=(-var='package_source_url=http://umbracoreleases.blob.core.windows.net/download/UmbracoCms.${{ parameters.umbracoSemanticVersion }}.zip')
+                  fi
+                  script param1 "${params[@]}"
+
                   terraform plan -var-file="../tf-vars/${{ variables.tfvarsFile }}" \
                     -out="out.plan" \
-                    -var='package_source_url=http://umbracoreleases.blob.core.windows.net/download/UmbracoCms.${{ parameters.umbracoSemanticVersion }}.zip' \
                     -var='instance_id=${{ parameters.instanceIdentifier }}'    
+                    "${params[@]}"
 
                   echo '#######Terraform Apply########'
                   terraform apply out.plan 
