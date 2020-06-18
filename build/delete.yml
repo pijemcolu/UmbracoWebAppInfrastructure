@@ -29,5 +29,5 @@ jobs:
                   echo '#######Destroying resource group########'
 
                   az group delete -n rg-${{ parameters.instanceIdentifier }} --yes
-                  az storage blob delete-batch --account-name ${{parameters.azureStorage}}--source ${{parameters.azureContainerName}} 
+                  az storage blob delete-batch --account-name ${{parameters.azureStorage}} --source ${{parameters.azureContainerName}} 
               displayName: 'Delete Azure resources'
