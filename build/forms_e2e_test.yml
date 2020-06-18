@@ -43,10 +43,11 @@ jobs:
                   echo '#######Run Tests########'
                   npm run cypress:run:install-umbraco
                   npm run cypress:run
-                  cp -rv src/Umbraco.Tests.AcceptanceTest/cypress/videos/* $(Build.ArtifactStagingDirectory)/cypress/videos 
+                  cp -rv cypress/videos/* $(Build.ArtifactStagingDirectory)/cypress/videos 
               displayName: 'Running tests'              
             - task: PublishBuildArtifacts@1
               displayName: 'Publish Artifact: Cypress E2E run'
               inputs:
                 PathtoPublish: '$(Build.ArtifactStagingDirectory)/cypress/videos'
                 ArtifactName: 'Cypress E2E run'
+              condition: always()
