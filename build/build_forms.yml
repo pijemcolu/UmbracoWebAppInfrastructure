@@ -1,0 +1,167 @@
+# Variables & their default values
+parameters:
+- name: buildPlatform
+  type: string
+  default: 'Any CPU'
+- name: buildConfiguration
+  type: string
+  default: 'Release'
+- name: serviceConnectionName
+  type: string
+  default: 'Umbraco services'
+- name: azureStorage
+  type: string
+  default: 'umbracotestartifacts'
+- name: azureContainerName
+  type: string
+  default: 'forms'
+# VM to run the build on & it's installed software
+# https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops
+# https://github.com/actions/virtual-environments/blob/master/images/win/Windows2019-Readme.md
+    
+jobs:
+  - job: build   
+    pool:
+      vmImage: 'vs2017-win2016'
+    displayName: 'Build, test and create artifacts'
+    steps:
+      - checkout: forms
+      - download: current
+        artifact: FormsVar
+      - task: AzureCLI@2
+        displayName: 'Generate forms variables'   
+        inputs:
+          azureSubscription: ${{ parameters.serviceConnectionName }}      
+          scriptType: 'pscore'      
+          scriptLocation: 'inlineScript'               
+          inlineScript: |
+            Write-Host ' '#######Convert forms variables output from $jsonPath to devops vars.########''
+            $file = Get-Content -Path '$(Pipeline.Workspace)/FormsVar/forms_var.json'                 
+            $json = $file | ConvertFrom-Json                              
+            Write-Host "##vso[task.setvariable variable=formBlobFileName]$($json.fileName)"   
+      - task: NuGetToolInstaller@0
+        displayName: 'Install nuget.exe 4.3.0'
+        inputs:
+          versionSpec: 4.3.0
+
+      - task: NuGetCommand@2
+        displayName: 'NuGet restore'
+        inputs:
+          feedsToUse: config
+          nugetConfigPath: NuGet.config
+
+      - powershell: |
+          Write-Host "Working folder: $pwd"
+          $ubuild = build/build.ps1 -get -continue
+          $version = $ubuild.GetUmbracoVersion()
+          if ($version.Comment -ne "")
+          {
+            # 8.0.0-alpha.33.1234
+            $continuous = "$($version.Semver).$(Build.BuildNumber)"
+          }
+          else
+          {
+            # 8.0.0-alpha.1234
+            $continuous = "$($version.Release)-alpha.$(Build.BuildNumber)"
+          }
+          $ubuild.SetUmbracoVersion($continuous)
+          $env:FORMSVERSION = $continuous
+          Write-Host "##vso[task.setvariable variable=formsVersion]$continuous"
+          Write-Host "Building: $continuous"
+        displayName: 'Set Umbraco Forms Version - using Powershell uBuild script'          
+      - task: PowerShell@2
+        displayName: 'Run Powershell build.ps1'
+        inputs:
+          targetType: filePath
+          filePath: ./Build/build.ps1
+          errorActionPreference: continue
+          failOnStderr: true
+
+      - script: 'type belle.log'
+        displayName: 'Display belle.log for errors'
+        condition: failed()
+
+      - script: 'type build.tmp\msbuild.umbraco.log'
+        displayName: 'Display msbuild.umbraco.log for errors'
+        condition: failed()
+
+      - script: 'type build.tmp\nuget.restore.log'
+        displayName: 'Display nuget.restore.log for errors'
+        condition: failed()
+
+      - script: 'type nupack.UmbracoForms.Core.log'
+        displayName: 'Display nupack.UmbracoForms.Core.log for errors'
+        condition: failed()
+
+      - script: 'type nupack.UmbracoForms.log'
+        displayName: 'Display nupack.UmbracoForms.log for errors'
+        condition: failed()
+
+      - task: VSBuild@1
+        displayName: 'Build Unit Tests'
+        inputs:
+          solution: src/Umbraco.Forms.Tests.UnitTests/Umbraco.Forms.Tests.UnitTests.csproj
+          vsVersion: '15.0'
+          msbuildArgs: '/p:OutputPath=$(Agent.BuildDirectory)\build.tmp\tests\ /t:Build'
+          platform: AnyCPU
+          configuration: Debug
+
+      - task: VSTest@2
+        displayName: 'Run VS Unit Tests'
+        inputs:
+          testAssemblyVer2: '$(Agent.BuildDirectory)\build.tmp\tests\Umbraco.Forms.Tests.UnitTests.dll'
+          vsTestVersion: '15.0'
+          runInParallel: true
+          codeCoverageEnabled: true
+          platform: ${{ parameters.buildPlatform }}
+          configuration: ${{ parameters.buildConfiguration }}
+
+      - task: Grunt@0
+        displayName: 'JS Karma Tests with Grunt'
+        inputs:
+          gruntFile: 'src/Umbraco.Forms.Client/Gruntfile.js'
+          targets: karma
+          publishJUnitResults: true
+          testResultsFiles: '**/TESTS-*.xml'
+  
+      - task: CopyFiles@2
+        displayName: 'Copy .zip & nupkg to: $(Build.ArtifactStagingDirectory)/build'
+        inputs:
+          SourceFolder: build.out
+          Contents: |
+            *.zip
+            *.nupkg
+          TargetFolder: '$(Build.ArtifactStagingDirectory)/build'
+      - task: AzureCLI@2
+        displayName: 'Copy build artifact to blob folder'   
+        inputs:
+          azureSubscription: ${{ parameters.serviceConnectionName }}      
+          scriptType: 'ps'      
+          scriptLocation: 'inlineScript'               
+          inlineScript: |        
+            New-Item -ItemType "directory" -Path $(Build.ArtifactStagingDirectory)/blob
+            Copy-Item -Path $(Build.ArtifactStagingDirectory)/build/UmbracoForms.Files.$(formsVersion).zip -Destination $(Build.ArtifactStagingDirectory)/blob/$(formBlobFileName)              
+      - task: CopyFiles@2
+        displayName: 'Copy test artifacts: $(Build.ArtifactStagingDirectory)/e2e'
+        inputs:
+          SourceFolder: src/Umbraco.Tests.AcceptanceTest
+          Contents: '**'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)/e2e'
+      - task: AzureFileCopy@4
+        displayName: 'Copy build artifacts to Azure blob storage'
+        inputs:
+          SourcePath: '$(Build.ArtifactStagingDirectory)/blob/'
+          azureSubscription: ${{parameters.serviceConnectionName}}
+          Destination: AzureBlob
+          storage: ${{parameters.azureStorage}}
+          ContainerName: ${{parameters.azureContainerName}}            
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact: forms'        
+        inputs:
+          pathToPublish: '$(Build.ArtifactStagingDirectory)/build'
+          ArtifactName: forms
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact: e2e'        
+        inputs:
+          pathToPublish: '$(Build.ArtifactStagingDirectory)/e2e'
+          ArtifactName: e2e

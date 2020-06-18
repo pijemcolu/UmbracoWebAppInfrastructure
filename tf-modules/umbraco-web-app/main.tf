@@ -22,12 +22,8 @@ resource "azurerm_app_service" "appservice" {
     dotnet_framework_version = "v4.0"
   }
 
-  app_settings = {
-    "UmbracoDbDSN" = var.db_connection_string
-  }
-
   provisioner "local-exec" {
-    command     = ".'${path.module}\\scripts\\az-deploy.ps1' -ResourceGroupName \"${var.rg_name}\" -AppName \"${azurerm_app_service.appservice.name}\" -PackageSourceUrl \"${var.package_source_url}\""
+    command     = ".'${path.module}\\scripts\\az-deploy.ps1' -ResourceGroupName \"${var.rg_name}\" -AppName \"${azurerm_app_service.appservice.name}\" -PackageSourceUrl \"${var.package_source_url}\" -FormsSourceUrl \"${var.forms_source_url}\" -DebugWebApp \"${var.debug_web_app}\" -DisableTours \"${var.disable_tours}\""
     interpreter = ["pwsh", "-Command"]
   }
 }

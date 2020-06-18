@@ -23,3 +23,14 @@ variable "location" {
 variable "package_source_url" {
   description = "Source of the package to deploy to the Azure Web App"
 }
+
+variable "debug_web_app" {
+  description = "Set debug true in web.config"
+}
+
+variable "disable_tours" {
+  description =  "Disable the Umbraco tours"
+}
+variable "forms_source_url" {
+  description = "Source of the form package to include when deploying Umbraco to the Azure Web App"
+}

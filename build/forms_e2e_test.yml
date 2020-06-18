@@ -1,0 +1,52 @@
+parameters:
+  environment:  
+  serviceConnectionName:
+jobs:
+  - deployment: Running_E2E_Forms_Test
+    displayName: Cypress E2E forms test
+    continueOnError: false
+    pool:
+      vmImage: "ubuntu-latest"
+    environment: ${{ parameters.environment }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:            
+            - checkout: forms
+            - download: current
+              artifact: TerraformOutput
+            - task: AzureCLI@2
+              displayName: 'Generate variables'   
+              inputs:
+                azureSubscription: ${{ parameters.serviceConnectionName }}      
+                scriptType: 'pscore'      
+                scriptLocation: 'inlineScript'               
+                inlineScript: |
+                  Write-Host ' '#######Convert terrafrom output from json file to devops vars.########''
+                  $file = Get-Content -Path '$(Pipeline.Workspace)/TerraformOutput/terraform_outputs.json'                 
+                  $json = $file | ConvertFrom-Json                  
+                  Write-Host "##vso[task.setvariable variable=connectionstring]$($json.connectionstring.value)"
+                  Write-Host "##vso[task.setvariable variable=hostname]$($json.hostname.value)"              
+            - task: AzureCLI@2
+              inputs:
+                azureSubscription: ${{ parameters.serviceConnectionName }}
+                scriptType: 'bash'
+                scriptLocation: 'inlineScript'
+                inlineScript: |
+                  echo '#######Running Cypress########'
+                  export CYPRESS_BASE_URL=https://$(hostname)
+                  export CYPRESS_connectionString='$(connectionstring)'
+                  cd src/Umbraco.Tests.AcceptanceTest
+                  npm install
+                  echo '#######Kickstart the website#######'
+                  until $(curl --output /dev/null --silent --head --fail https://$(hostname):443); do printf '.'; sleep 5; done
+                  echo '#######Run Tests########'
+                  npm run cypress:run:install-umbraco
+                  npm run cypress:run
+                  cp -rv src/Umbraco.Tests.AcceptanceTest/cypress/videos/* $(Build.ArtifactStagingDirectory)/cypress/videos 
+              displayName: 'Running tests'              
+            - task: PublishBuildArtifacts@1
+              displayName: 'Publish Artifact: Cypress E2E run'
+              inputs:
+                PathtoPublish: '$(Build.ArtifactStagingDirectory)/cypress/videos'
+                ArtifactName: 'Cypress E2E run'

@@ -38,7 +38,7 @@ resource "null_resource" "create_sql_user" {
 
 resource "random_password" "sql_password" {
   length           = 54
-  special          = true
+  special          = false
   override_special = "$%@&*()"
 }
 

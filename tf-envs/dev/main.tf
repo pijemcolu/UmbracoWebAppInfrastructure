@@ -11,6 +11,9 @@ module "umbraco-web-app" {
   app_name           = var.instance_id
   rg_name            = azurerm_resource_group.rg.name
   package_source_url = var.package_source_url
+  debug_web_app      = var.debug_web_app
+  disable_tours      = var.disable_tours  
+  forms_source_url   = var.forms_source_url    
 }
 
 module "sql-db" {
