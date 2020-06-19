@@ -52,7 +52,7 @@ jobs:
                 scriptType: 'bash'
                 scriptLocation: 'inlineScript'
                 inlineScript: | 
-                  mkdir -p cypress/videos
+                  mkdir -p $(Build.ArtifactStagingDirectory)/cypress/videos
                   cp -rv $(Build.SourcesDirectory)/src/Umbraco.Tests.AcceptanceTest/cypress/videos/* $(Build.ArtifactStagingDirectory)/cypress/videos               
               
             - task: PublishBuildArtifacts@1
