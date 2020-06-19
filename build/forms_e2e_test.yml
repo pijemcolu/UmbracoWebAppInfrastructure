@@ -51,7 +51,9 @@ jobs:
                 azureSubscription: ${{ parameters.serviceConnectionName }}
                 scriptType: 'bash'
                 scriptLocation: 'inlineScript'
-                inlineScript: cp -rv $(Build.SourcesDirectory)/src/Umbraco.Tests.AcceptanceTest/cypress/videos/* $(Build.ArtifactStagingDirectory)/cypress/videos               
+                inlineScript: | 
+                  mkdir -p cypress/videos
+                  cp -rv $(Build.SourcesDirectory)/src/Umbraco.Tests.AcceptanceTest/cypress/videos/* $(Build.ArtifactStagingDirectory)/cypress/videos               
               
             - task: PublishBuildArtifacts@1
               displayName: 'Publish Artifact: Cypress E2E run'
