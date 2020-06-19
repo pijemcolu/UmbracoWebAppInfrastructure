@@ -45,13 +45,17 @@ jobs:
                   npm run cypress:run                  
               displayName: 'Running tests'              
             - task: AzureCLI@2
-                scriptLocation: 'inlineScript'
-                inlineScript: cp -rv $(Build.SourcesDirectory)/src/Umbraco.Tests.AcceptanceTest/cypress/videos/* $(Build.ArtifactStagingDirectory)/cypress/videos 
               displayName: 'Copying video artifacts'  
               condition: always() 
+              inputs:
+                azureSubscription: ${{ parameters.serviceConnectionName }}
+                scriptType: 'bash'
+                scriptLocation: 'inlineScript'
+                inlineScript: cp -rv $(Build.SourcesDirectory)/src/Umbraco.Tests.AcceptanceTest/cypress/videos/* $(Build.ArtifactStagingDirectory)/cypress/videos               
+              
             - task: PublishBuildArtifacts@1
               displayName: 'Publish Artifact: Cypress E2E run'
+              condition: always()
               inputs:
                 PathtoPublish: '$(Build.ArtifactStagingDirectory)/cypress/videos'
                 ArtifactName: 'Cypress E2E run'
-              condition: always()
