@@ -42,9 +42,13 @@ jobs:
                   until $(curl --output /dev/null --silent --head --fail https://$(hostname):443); do printf '.'; sleep 5; done
                   echo '#######Run Tests########'
                   npm run cypress:run:install-umbraco
-                  npm run cypress:run
-                  cp -rv $(Build.SourcesDirectory)/src/Umbraco.Tests.AcceptanceTest/cypress/videos/* $(Build.ArtifactStagingDirectory)/cypress/videos 
+                  npm run cypress:run                  
               displayName: 'Running tests'              
+            - task: AzureCLI@2
+                scriptLocation: 'inlineScript'
+                inlineScript: cp -rv $(Build.SourcesDirectory)/src/Umbraco.Tests.AcceptanceTest/cypress/videos/* $(Build.ArtifactStagingDirectory)/cypress/videos 
+              displayName: 'Copying video artifacts'  
+              condition: always() 
             - task: PublishBuildArtifacts@1
               displayName: 'Publish Artifact: Cypress E2E run'
               inputs:
