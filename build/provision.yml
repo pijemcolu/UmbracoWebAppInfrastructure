@@ -4,10 +4,18 @@ parameters:
   serviceConnectionName:
   # Optional
   umbracoSemanticVersion:
-  umbracoArtifactUrl:
-
+  umbracoArtifactUrl:    
+  debugWebApp:
+    type: bool
+    default: true
+  disableTours:
+    type: bool
+    default: true  
+  repository:
+    type: string
+    default: self  
 jobs:
-  - deployment: Provisioning_Azure_App_Service
+  - deployment: Provisioning_Azure_App_Service       
     displayName: Provision infrastructure for ${{ parameters.environment }}
     continueOnError: false
     pool:
@@ -17,13 +25,26 @@ jobs:
       tfBackendResourceGroupName: 'rg-tf-backend-storage'
       tfBackendStorageAccountName: 'sttfbackend34587'
       tfBackendStorageContainerName: 'tf-backend-files'
-      tfBackendFileName: "${{ parameters.environment }}-tf-state-file"
-      tfvarsFile: "${{ parameters.environment }}.tfvars"
+      tfBackendFileName: "${{ parameters.environment }}-tf-state-file"              
     strategy:
       runOnce:
         deploy:
           steps:
-            - checkout: self
+            - checkout: ${{ parameters.repository }}
+            - download: current
+              artifact: FormsVar
+            - task: AzureCLI@2
+              displayName: 'Set variables'   
+              inputs:
+                azureSubscription: ${{ parameters.serviceConnectionName }}      
+                scriptType: 'pscore'      
+                scriptLocation: 'inlineScript'               
+                inlineScript: |
+                  Write-Host ' '#######Convert forms variables output from json file to devops vars.########''
+                  $file = Get-Content -Path '$(Pipeline.Workspace)/FormsVar/forms_var.json'                 
+                  $json = $file | ConvertFrom-Json                    
+                  echo "##vso[task.setvariable variable=formBlobFileName]$($json.fileName)"
+                  echo "##vso[task.setvariable variable=formsBlobUrl]$($json.url)"                     
             - task: AzureCLI@2
               inputs:
                 azureSubscription: ${{ parameters.serviceConnectionName }}
@@ -35,26 +56,43 @@ jobs:
                   export ARM_CLIENT_SECRET=$servicePrincipalKey
                   export ARM_SUBSCRIPTION_ID=$(az account show | jq '.id' -r)
                   export ARM_TENANT_ID=$tenantId
-
+                 
                   echo '#######Terraform Init########'
                   terraform init -backend-config="resource_group_name=${{ variables.tfBackendResourceGroupName }}" -backend-config="storage_account_name=${{ variables.tfBackendStorageAccountName }}" -backend-config="container_name=${{ variables.tfBackendStorageContainerName }}" -backend-config="key=${{ variables.tfBackendFileName }}"  
 
                   echo '#######Terraform Plan########'
                   params=()
                   if [[ -n "$umbracoArtifactUrl" ]]; then
-                    params+=(-var='package_source_url={{ parameters.umbracoArtifactUrl }}')
+                    params+=(-var="package_source_url=${{ parameters.umbracoArtifactUrl }}")
                   else
-                    params+=(-var='package_source_url=http://umbracoreleases.blob.core.windows.net/download/UmbracoCms.${{ parameters.umbracoSemanticVersion }}.zip')
-                  fi
-                  script param1 "${params[@]}"
+                    params+=(-var="package_source_url=http://umbracoreleases.blob.core.windows.net/download/UmbracoCms.${{ parameters.umbracoSemanticVersion }}.zip")
+                  fi                                                                                                      
 
-                  terraform plan -var-file="../tf-vars/${{ variables.tfvarsFile }}" \
+                  terraform plan \
                     -out="out.plan" \
-                    -var='instance_id=${{ parameters.instanceIdentifier }}'    
-                    "${params[@]}"
+                    -var="instance_id=${{ parameters.instanceIdentifier }}" \
+                    -var="forms_source_url=$(formsBlobUrl)/$(formBlobFileName)" \
+                    -var="disable_tours=${{parameters.disableTours }}" \
+                    -var="debug_web_app=${{parameters.debugWebApp }}" \
+                    -var="location=West Europe" \
+                    -var="location_acronym=we" \
+                    -var="instance_id=${{parameters.instanceIdentifier }}" \
+                    "${params[@]}"                    
 
                   echo '#######Terraform Apply########'
                   terraform apply out.plan 
+
+                  echo '#######Check the output variables########'
+                  terraform output
+     
+                  echo '#######Exports Terraform Output Variables to a file########'
+                  terraform output -json > $(Build.ArtifactStagingDirectory)/terraform_outputs.json
+                  
                 addSpnToEnvironment: true
-                workingDirectory: '$(System.DefaultWorkingDirectory)/tf-envs/${{ parameters.environment }}'
+                workingDirectory: '$(System.DefaultWorkingDirectory)/tf-envs/${{ parameters.environment }}'              
               displayName: 'Terraform apply'
+            - task: PublishBuildArtifacts@1
+              displayName: 'Publish Artifact: Terraform variable output'
+              inputs:
+                PathtoPublish: '$(Build.ArtifactStagingDirectory)/terraform_outputs.json'
+                ArtifactName: 'TerraformOutput'     

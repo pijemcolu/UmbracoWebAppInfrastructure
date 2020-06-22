@@ -1,22 +1,3 @@
-# Deploys an opinionated terraform project to an azure subscription
-
-# Requirements (create using ./az-setup.sh)
-# ${{ parameters.environment }} pipeline parameter
-# service connection created in Azure Devops
-# azure storage account for backend
-
-# Assumes a folder structure:
-# tf-envs/
-# ├── ${{ parameters.environment }}/
-# │   ├── main.tf
-# │   ├── variables.tf
-# ├── tfvars/
-# │   ├── ${{ parameters.environment }}.tfvars
-# │   ├── ${{ parameters.environment }}.backend.json
-
-trigger:
-- master
-
 pool:
   vmImage: 'ubuntu-latest'
 
@@ -26,7 +7,7 @@ parameters:
   default: 'dev'
 - name: serviceConnectionName
   type: string
-  default: 'tf-sp-dev-mto-test'
+  default: 'Umbraco services'
 - name: instanceIdentifier
   type: string
   default: 'umbcypresstestinstance'
@@ -36,22 +17,72 @@ parameters:
 - name: umbracoArtifactUrl
   type: string
   default: 'http://umbracoreleases.blob.core.windows.net/download/UmbracoCms.8.6.0.zip'
-
-stages:
-  - stage: provision
-    jobs:
-      - template: provision.yml
-        parameters:
-          environment: ${{ parameters.environment }}
-          instanceIdentifier: ${{ parameters.instanceIdentifier }}
-          serviceConnectionName: ${{ parameters.serviceConnectionName }}
-          umbracoSemanticVersion: ${{ parameters.umbracoSemanticVersion }}
-          umbracoArtifactUrl: ${{ parameters.umbracoArtifactUrl }}
-
-  - stage: delete
-    jobs:
-      - template: delete.yml
-        parameters:
-          environment: ${{ parameters.environment }}
-          instanceIdentifier: ${{ parameters.instanceIdentifier }}
-          serviceConnectionName: ${{ parameters.serviceConnectionName }}
+- name: debugWebApp
+  type: boolean
+  default: true
+- name: disableTours
+  type: boolean
+  default: true
+resources:
+  repositories:  
+  - repository: forms
+    type: github
+    name: 'umbraco/forms'
+    ref: 'v8/feature/e2e_test_build_pipeline'
+    endpoint: 'umbraco'
+  - repository: umbWebApp
+    type: github    
+    name: 'thomasandresen/UmbracoWebAppInfrastructure'
+    ref: 'e2e-integration'
+    endpoint: 'ForkAccessMikulas'
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily midnight build
+  branches:
+    include:
+    - v8/dev
+stages: 
+- stage: setup
+  jobs:   
+  - job: definevariables  
+    displayName: 'Setup variables to be used for blob storage'  
+    steps:
+    - script: |
+       date +'{"fileName": "Umbraco.Forms.%s.zip", "url": "https://umbracotestartifacts.blob.core.windows.net/forms/blob"}'  > $(Build.ArtifactStagingDirectory)/forms_var.json
+      displayName: 'Set froms filename and blob url'  
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: Umbraco forms variables'
+      inputs:
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)/forms_var.json'
+          ArtifactName: 'FormsVar'  
+- stage: build      
+  jobs:
+  - template: build/build_forms.yml@umbWebApp
+    parameters: 
+      serviceConnectionName: ${{ parameters.serviceConnectionName }}  
+- stage: provision
+  jobs:     
+  - template: build/provision.yml@umbWebApp
+    parameters:      
+      repository: umbWebApp
+      environment: ${{ parameters.environment }}
+      instanceIdentifier: ${{ parameters.instanceIdentifier }}
+      serviceConnectionName: ${{ parameters.serviceConnectionName }}
+      umbracoSemanticVersion: ${{ parameters.umbracoSemanticVersion }}
+      umbracoArtifactUrl: ${{ parameters.umbracoArtifactUrl }}
+      debugWebApp: ${{ parameters.debugWebApp }}
+      disableTours: ${{ parameters.disableTours }}               
+- stage: e2e
+  jobs:
+    - template: build/forms_e2e_test.yml@umbWebApp
+      parameters:
+        environment: ${{ parameters.environment }}   
+        serviceConnectionName: ${{ parameters.serviceConnectionName }}      
+- stage: delete
+  jobs:
+   - template: build/delete.yml@umbWebApp
+     parameters:
+       environment: ${{ parameters.environment }}
+       instanceIdentifier: ${{ parameters.instanceIdentifier }}
+       serviceConnectionName: ${{ parameters.serviceConnectionName }}
+  condition: always()

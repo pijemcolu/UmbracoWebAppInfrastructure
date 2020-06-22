@@ -22,4 +22,3 @@ variable "sql_username" {
   description = "Username for the new database user"
 }
 
-

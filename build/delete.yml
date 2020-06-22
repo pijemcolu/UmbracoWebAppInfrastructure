@@ -2,7 +2,12 @@ parameters:
   environment:
   instanceIdentifier:
   serviceConnectionName:
-
+  - name: azureStorage
+    type: string
+    default: 'umbracotestartifacts'
+  - name: azureContainerName
+    type: string
+    default: 'forms'
 jobs:
   - deployment: Deleting_Azure_App_Service
     displayName: Deleting Azure resource group
@@ -22,6 +27,6 @@ jobs:
                 scriptLocation: 'inlineScript'
                 inlineScript: |
                   echo '#######Destroying resource group########'
-
                   az group delete -n rg-${{ parameters.instanceIdentifier }} --yes
+                  # az storage blob delete-batch --account-name ${{parameters.azureStorage}} --source ${{parameters.azureContainerName}} 
               displayName: 'Delete Azure resources'
