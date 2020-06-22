@@ -49,7 +49,7 @@ stages:
     steps:
     - script: |
        date +'{"fileName": "Umbraco.Forms.%s.zip", "url": "https://umbracotestartifacts.blob.core.windows.net/forms/blob"}'  > $(Build.ArtifactStagingDirectory)/forms_var.json
-      displayName: 'Set forms filename and blob url'  
+      displayName: 'Set froms filename and blob url'  
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact: Umbraco forms variables'
       inputs:
